@@ -1,0 +1,11 @@
+{
+  "name": "react-kform",
+  "version": "0.0.1",
+  "description": "A Form Component for React.",
+  "main": "index.jsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "MarzK",
+  "license": "MIT"
+}

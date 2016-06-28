@@ -13,6 +13,23 @@ You dont need to care about sync/async validating and error messages, you dont n
 * async or sync validator
 * error message
 
+## Roadmap
+
+- [ ] Process dirty code for input field
+
+## Data Stucture
+
+```
+{
+
+  value: {
+    username: String,
+    password: String,
+    phone: String,
+  },
+}
+```
+
 ## Examples
 
 ```jsx

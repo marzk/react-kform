@@ -17,15 +17,14 @@ You dont need to care about sync/async validating and error messages, you dont n
 
 - [ ] Process dirty code for input field
 
-## Data Stucture
+## Data Stucture & Form State
 
 ```
 {
-
-  value: {
-    username: String,
-    password: String,
-    phone: String,
+  username: {
+    value: String,
+    isValid: Boolean,
+    msg: String,
   },
 }
 ```
@@ -76,34 +75,11 @@ class EditPassword from Component {
 export default EditPassword;
 ```
 
-## Form State
-
-```
-{
-  value: {
-    oldpass: String,
-  },
-  fields: {
-    oldpass: {
-      isValid: Boolean,
-      msg: String,
-    }
-  }
-}
-```
-
 ## Validation
 
 ```
 [{
-  validator: Boolean Function || True Promise,
+  validator: Boolean Function || Promise Function,
   msg: String,
 }]
-```
-
-## Flow
-
-```
-ACTION input[name] => VALIDATION input[name].value => STATE value
-ACTION submit => VALIDATE every => VALIDATION every => GET state =>  onSubmit
 ```

@@ -9,7 +9,12 @@ export function promisyAsyncValidating({ v, msg = '' }) {
     });
 }
 
-export function validate(validations, value, { resolve, reject }) {
+export function validate(validations, value, {
+  resolve = () => {},
+  reject = () => {},
+  needAsync = false,
+}) {
+  if (!validations) return { isValid: true };
   const asyncValidatings = [];
   const rel = {
     status: 'pending',
@@ -30,12 +35,13 @@ export function validate(validations, value, { resolve, reject }) {
   });
 
   // 异步处理
-  rel.asyncValidation = Promise.all(asyncValidatings.map(promisyAsyncValidating))
+  rel.asyncValidation = needAsync && Promise.all(asyncValidatings.map(promisyAsyncValidating))
     .then(() => {
       rel.status = 'fulfilled';
     })
     .catch(reason => {
-      rel.status = 'fulfilled';
+      rel.status = 'rejected';
+      rel.isValid = false;
       reject(reason);
     });
 
@@ -44,12 +50,13 @@ export function validate(validations, value, { resolve, reject }) {
   } else {
     reject({ isValid: isAllValid, msg });
   }
+  rel.isValid = isAllValid;
 
-  return status;
+  return rel;
 }
 
-export function isFormField(field) {
-  switch (field.type) {
+export function isFormField(type) {
+  switch (type) {
     case 'input':
       return true;
     default:

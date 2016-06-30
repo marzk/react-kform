@@ -25,12 +25,25 @@ class KForm extends Component {
   }
 
   onBlur(e) {
+    if (!isFormField(e.target.tagName.toLowerCase())) return;
     const name = e.target.name;
     const value = e.target.value;
-    this.setFieldValue(name, value);
+    const field = this.fields[name];
 
+    const validations = field.props.validations;
+
+    validate(validations, value, {
+      resolve: rel => {
+        // sync ture
+        this.setFieldValidation(name, rel);
+      },
+      reject: rel => {
+        // sync/async false
+        this.setFieldValidation(name, rel);
+      },
+      needAsync: true,
+    });
     // Validate
-
     // const validations = this.fields[name].props.validations;
   }
 
@@ -43,19 +56,17 @@ class KForm extends Component {
 
     const validations = this.fields[name].props.validations;
 
-    if (validations) {
-      // debounce
-      validate(validations, value, {
-        resolve: rel => {
-          // sync ture
-          this.setFieldValidation(name, rel);
-        },
-        reject: rel => {
-          // sync/async false
-          this.setFieldValidation(name, rel);
-        },
-      });
-    }
+    // debounce
+    validate(validations, value, {
+      resolve: rel => {
+        // sync ture
+        this.setFieldValidation(name, rel);
+      },
+      reject: rel => {
+        // sync/async false
+        this.setFieldValidation(name, rel);
+      },
+    });
   }
 
   onSubmit(e) {
@@ -75,11 +86,20 @@ class KForm extends Component {
     // 2. validate: every field
 
     const fieldsIsValid = names.every(name => (
-      this.validate(name, this.value[name].value)
+      validate(
+        this.fields[name].props.validations,
+        this.value[name].value,
+        {
+          reject: (rel) => {
+            this.setFieldValidation(name, rel);
+          },
+        }
+      ).isValid
     ));
 
     // 2.1. false -> doNothing
 
+    console.log(fieldsIsValid);
     if (!fieldsIsValid) return;
 
     // 3. props.onSubmit
@@ -112,14 +132,18 @@ class KForm extends Component {
   rerenderChildren(children) {
     return Children.map(children, (child) => {
       let props = {};
-      if (isFormField(child)) {
+      if (isFormField(child.type)) {
         props = {
           key: child.props.name,
           value: this.props.value[child.props.name] &&
             this.props.value[child.props.name].value || '',
         };
         this.fields[props.key] = child;
-        if (!this.value[props.key]) this.value[props.key] = {};
+        if (!this.value[props.key]) {
+          this.value[props.key] = {
+            value: '',
+          };
+        }
       }
 
       let relChild;

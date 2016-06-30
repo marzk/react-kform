@@ -15,7 +15,12 @@ You dont need to care about sync/async validating and error messages, you dont n
 
 ## Roadmap
 
-- [ ] Process dirty code for input field
+- [x] dirty code for input field
+- [x] dirty code for onChange
+- [x] dirty code for onBlur
+- [x] onSubmit
+- [ ] dirty code for other field
+- [ ] this.value & this.props.value sync problem
 
 ## Data Stucture & Form State
 

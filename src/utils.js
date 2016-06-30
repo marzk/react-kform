@@ -1,20 +1,51 @@
-export function promisyValidation(value, { f, msg = '' }) {
-  return new Promise((resolve) => {
-    resolve(f(value));
-  }).then((isValid) => {
-    if (typeof isValid === 'boolean') {
-      return { isValid, msg };
+export function promisyAsyncValidating({ v, msg = '' }) {
+  return Promise.resolve(v)
+    .then(result => {
+      const rel = {
+        isValid: result.isValid,
+        msg: result.msg || msg,
+      };
+      return rel.isValid ? true : Promise.reject(rel);
+    });
+}
+
+export function validate(validations, value, { resolve, reject }) {
+  const asyncValidatings = [];
+  const rel = {
+    status: 'pending',
+  };
+  let msg;
+  // 同步处理
+  const isAllValid = validations.every(v => {
+    let isValid = v.f(value);
+    msg = v.msg;
+    if (!(typeof isValid === 'boolean')) {
+      asyncValidatings.push({
+        v: isValid,
+        msg: v.msg,
+      });
+      isValid = true;
     }
     return isValid;
-  }).then((rel) => {
-    if (rel.isValid) {
-      return true;
-    }
-    return Promise.reject({
-      isValid: rel.isValid,
-      msg: rel.msg,
-    });
   });
+
+  // 异步处理
+  rel.asyncValidation = Promise.all(asyncValidatings.map(promisyAsyncValidating))
+    .then(() => {
+      rel.status = 'fulfilled';
+    })
+    .catch(reason => {
+      rel.status = 'fulfilled';
+      reject(reason);
+    });
+
+  if (isAllValid) {
+    resolve({ isValid: isAllValid, msg: '' });
+  } else {
+    reject({ isValid: isAllValid, msg });
+  }
+
+  return status;
 }
 
 export function isFormField(field) {

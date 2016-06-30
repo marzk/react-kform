@@ -1,16 +1,19 @@
 import React, { Component, PropTypes } from 'react';
 import KForm from '../';
+import 'expose?Perf!react-addons-perf';
 
 class Simple extends Component {
   constructor(props) {
     super(props); 
     this.state = {
       form: {
-        value: {},
-        validation: {},
       },
     };
     this.onFormStateChange = this.onFormStateChange.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
+  }
+
+  onSubmit(e, data) {
   }
 
   render() {
@@ -18,6 +21,7 @@ class Simple extends Component {
       <KForm
         onFormChange={this.onFormStateChange}
         value={this.state.form}
+        onSubmit={this.onSubmit}
       >
         <div>
           <label htmlFor="username">Username: </label>
@@ -26,6 +30,10 @@ class Simple extends Component {
             name="username"
             type="text"
             validations={[
+              {
+                f: v => v.trim().length > 0,
+                msg: '不能为空',
+              },
               {
                 f: (v) => /^\w+$/.test(v),
                 msg: '不合规矩',
@@ -44,7 +52,7 @@ class Simple extends Component {
               }
             ]}
           />
-          <span>{this.state.form.validation.username && this.state.form.validation.username.msg || ''}</span>
+          <span>{this.state.form.username && this.state.form.username.msg || ''}</span>
         </div>
         <div>
           <label htmlFor="password">Password: </label>

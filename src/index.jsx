@@ -1,14 +1,14 @@
 import React, { PropTypes, Component, Children } from 'react';
 import update from 'react-addons-update';
 import {
-  promisyValidation,
+  validate,
   isFormField,
-  compareValidation,
 } from './utils';
 
 const propTypes = {
   value: PropTypes.object.isRequired,
   onFormChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
   children: PropTypes.node,
 };
 
@@ -17,25 +17,73 @@ class KForm extends Component {
     super(props);
     this.rerenderChildren = this.rerenderChildren.bind(this);
     this.setStore = this.setStore.bind(this);
-    this.validate = this.validate.bind(this);
     this.onChange = this.onChange.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
     this.onBlur = this.onBlur.bind(this);
     this.fields = {};
     this.value = this.props.value;
   }
 
-  onBlur() {
-    // emit a blur event
-    // emit e.target validation
+  onBlur(e) {
+    const name = e.target.name;
+    const value = e.target.value;
+    this.setFieldValue(name, value);
+
+    // Validate
+
+    // const validations = this.fields[name].props.validations;
   }
 
   onChange(e) {
     const name = e.target.name;
     const value = e.target.value;
-    // emit a change event
-
     this.setFieldValue(name, value);
-    this.validate(name, value);
+
+    // Validate
+
+    const validations = this.fields[name].props.validations;
+
+    if (validations) {
+      // debounce
+      validate(validations, value, {
+        resolve: rel => {
+          // sync ture
+          this.setFieldValidation(name, rel);
+        },
+        reject: rel => {
+          // sync/async false
+          this.setFieldValidation(name, rel);
+        },
+      });
+    }
+  }
+
+  onSubmit(e) {
+    e.preventDefault();
+    const names = Object.keys(this.value);
+
+    // 1. isValid: check every field
+
+    const isValid = names.every(name => (
+      typeof this.value[name].isValid === 'undefined' || this.value[name].isValid
+    ));
+
+    // 1.1. false -> doNothing
+
+    if (!isValid) return;
+
+    // 2. validate: every field
+
+    const fieldsIsValid = names.every(name => (
+      this.validate(name, this.value[name].value)
+    ));
+
+    // 2.1. false -> doNothing
+
+    if (!fieldsIsValid) return;
+
+    // 3. props.onSubmit
+    this.props.onSubmit(e, this.value);
   }
 
   setStore(store) {
@@ -45,9 +93,9 @@ class KForm extends Component {
 
   setFieldValue(name, value) {
     this.setStore({
-      value: {
-        $merge: {
-          [name]: value,
+      [name]: {
+        value: {
+          $set: value,
         },
       },
     });
@@ -55,10 +103,8 @@ class KForm extends Component {
 
   setFieldValidation(name, validation) {
     this.setStore({
-      validation: {
-        $merge: {
-          [name]: validation,
-        },
+      [name]: {
+        $merge: validation,
       },
     });
   }
@@ -69,9 +115,11 @@ class KForm extends Component {
       if (isFormField(child)) {
         props = {
           key: child.props.name,
-          value: this.props.value.value[child.props.name] || '',
+          value: this.props.value[child.props.name] &&
+            this.props.value[child.props.name].value || '',
         };
         this.fields[props.key] = child;
+        if (!this.value[props.key]) this.value[props.key] = {};
       }
 
       let relChild;
@@ -94,31 +142,13 @@ class KForm extends Component {
     });
   }
 
-  validate(name, value) {
-    const validations = this.fields[name].props.validations;
-    if (validations) {
-      const promisy = promisyValidation.bind(null, value);
-
-      // 置为有效
-      const rel = { isValid: true, msg: '' };
-      if (!compareValidation(this.value.validation[name], rel)) {
-        this.setFieldValidation(name, rel);
-      }
-      Promise.all(validations.map(promisy))
-        .catch((result) => {
-          if (!compareValidation(this.value.validation[name], result)) {
-            this.setFieldValidation(name, result);
-          }
-        });
-    }
-  }
-
   render() {
     return (
       <form
         {...this.props}
         onChange={this.onChange}
         onBlur={this.onBlur}
+        onSubmit={this.onSubmit}
       >
         {this.rerenderChildren(this.props.children)}
       </form>

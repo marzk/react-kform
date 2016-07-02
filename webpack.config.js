@@ -5,7 +5,8 @@ var HtmlPlugin = require('html-webpack-plugin');
 module.exports = {
   devtool: 'eval',
   entry: {
-    simple: ['src/simple/index.js']
+    simple: ['src/simple/index.js'],
+    'input-text': ['src/input-text/index.js']
   },
   output: {
     path: path.join(__dirname, 'examples'),

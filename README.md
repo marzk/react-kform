@@ -19,6 +19,8 @@ You dont need to care about sync/async validating and error messages, you dont n
 - [x] dirty code for onChange
 - [x] dirty code for onBlur
 - [x] onSubmit
+- [ ] dirty
+- [ ] test cases and examples
 - [ ] dirty code for other field
 - [ ] this.value & this.props.value sync problem
 

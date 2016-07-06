@@ -27,6 +27,7 @@ class KForm extends Component {
 
   onFocus(e) {
     const name = e.target.name;
+    if (!isFormField(e.target.tagName.toLowerCase())) return;
 
     // when focus, reset the formata status 
     this.setStateChange(this.props.value.resetStatus(name));
@@ -55,13 +56,11 @@ class KForm extends Component {
 
   onSubmit(e) {
     e.preventDefault();
-    const names = Object.keys(this.value);
+    const formata = this.props.value;
 
     // 1. isValid: check every field
 
-    const isValid = names.every(name => (
-      typeof this.value[name].isValid === 'undefined' || this.value[name].isValid
-    ));
+    const isValid = formata.isAllValid();
 
     // 1.1. false -> doNothing
 
@@ -69,25 +68,16 @@ class KForm extends Component {
 
     // 2. validate: every field
 
-    const fieldsIsValid = names.every(name => (
-      validate(
-        this.fields[name].props.validations,
-        this.value[name].value,
-        {
-          reject: (rel) => {
-            this.setFieldValidation(name, rel);
-          },
-        }
-      ).isValid
-    ));
+    formata.validateAll()
+      .then((rel) => {
+        this.props.onSubmit(e, formata.getFormData());
+        this.updateFieldValidation()
+      })
+      .catch(this.updateFieldValidation.bind(this));
 
     // 2.1. false -> doNothing
 
-    console.log(fieldsIsValid);
-    if (!fieldsIsValid) return;
-
     // 3. props.onSubmit
-    this.props.onSubmit(e, this.value);
   }
 
   validate(name) {
@@ -109,7 +99,7 @@ class KForm extends Component {
     this.setStateChange(this.props.value.setValue(name, value));
   }
 
-  updateFieldValidation(name) {
+  updateFieldValidation() {
     this.setStateChange(this.props.value.updateFormata());
   }
 

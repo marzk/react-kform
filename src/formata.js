@@ -63,11 +63,23 @@ class Formata {
     });
   }
 
+  isAllValid() {
+    return this.getFields().every(name => {
+      return this.getField(name).isValid;
+    });
+  }
+
   getFields() {
     if (!this.fields) {
       this.fields = Object.keys(this.data);
     }
     return this.fields;
+  }
+
+  getFormData() {
+    return this.getFields.reduce((p, name) => {
+      p.name = this.getValue(name);
+    }, {});
   }
 
   setValidations(name, validations = []) {
@@ -93,6 +105,10 @@ class Formata {
 
   runValidation(name) {
     return this.validate(name, this.getValidations(name));
+  }
+
+  validateAll() {
+    return Promise.all(this.getFields().map(this.runValidation.bind(this)));
   }
 }
 

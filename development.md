@@ -4,6 +4,16 @@
 
 this version focus on other fields, test cases and examples.
 
+### Form Validation Progress
+
+* Sync Validation
+  * when to validate? typing or debounce
+* Async Validation
+  * if it is in pending, should be indicated?
+  * race condition
+* Submit Validation
+* Multiple fields Validation
+
 ### Form Value Structure
 
 develop a new form value structure from immutablejs.

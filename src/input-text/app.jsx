@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import KForm from 'src/index';
+import KForm, { Formata } from 'src/index';
 import update from 'react-addons-update';
 
 const validator = {
@@ -25,7 +25,7 @@ const validation = {
     },
     {
       f: validator.isFit,
-      msg: 'username should consist of letter, number or underline.',
+      msg: 'password should consist of letter, number or underline.',
     }
   ],
 };
@@ -34,11 +34,7 @@ export default class InputText extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      form: {
-        username: {},
-        password: {},
-        confirmPassword: {},
-      },
+      form: new Formata(),
     };
     this.onSubmit = this.onSubmit.bind(this);
     this.onFormChange = this.onFormChange.bind(this);
@@ -69,7 +65,7 @@ export default class InputText extends Component {
             type="text"
             validations={validation.username}
           />
-          {this.state.form.username.msg || ''}
+          {this.state.form.getField('username').msg}
         </div>
         <div>
           <label htmlFor="password">Password: </label>
@@ -78,28 +74,16 @@ export default class InputText extends Component {
             name="password"
             type="password"
             validations={[
-              ...validation.password,
               {
                 f: v => {
-                  if (this.state.form.confirmPassword.value === v) {
-                    return true;
-                  } else {
-                    this.setState({
-                      form: update(this.state.form, {
-                        confirmPassword: {
-                          $merge: {
-                            isValid: false,
-                            msg: 'doesnt same',
-                          },
-                        }
-                      }),
-                    });
-                  }
+                  this.state.form.runValidation('confirmPassword').catch(() => {});
+                  return true;
                 },
-              }
+              },
+              ...validation.password
             ]}
           />
-          {this.state.form.password.msg || ''}
+          {this.state.form.getField('password').msg}
         </div>
         <div>
           <label htmlFor="confirmPassword">ConfirmPassword: </label>
@@ -109,12 +93,12 @@ export default class InputText extends Component {
             type="password"
             validations={[
               {
-                f: v => this.state.form.password.value === v,
+                f: v => this.state.form.getValue('password') === v,
                 msg: 'is not equal with password.',
               }
             ]}
           />
-          {this.state.form.confirmPassword.msg || ''}
+          {this.state.form.getField('confirmPassword').msg}
         </div>
         <button type="submit">submit</button>
       </KForm>

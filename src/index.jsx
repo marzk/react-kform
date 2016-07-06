@@ -1,9 +1,10 @@
 import React, { PropTypes, Component, Children } from 'react';
 import update from 'react-addons-update';
 import {
-  validate,
   isFormField,
+  debounce,
 } from './utils';
+import Formata from './formata';
 
 const propTypes = {
   value: PropTypes.object.isRequired,
@@ -16,33 +17,27 @@ class KForm extends Component {
   constructor(props) {
     super(props);
     this.rerenderChildren = this.rerenderChildren.bind(this);
-    this.setStore = this.setStore.bind(this);
+    this.setStateChange = this.setStateChange.bind(this);
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
     this.onBlur = this.onBlur.bind(this);
-    this.fields = {};
-    this.value = this.props.value;
+    this.onFocus = this.onFocus.bind(this);
+    this.validate = debounce(this.validate, 200).bind(this);
+  }
+
+  onFocus(e) {
+    const name = e.target.name;
+
+    // when focus, reset the formata status 
+    this.setStateChange(this.props.value.resetStatus(name));
   }
 
   onBlur(e) {
     if (!isFormField(e.target.tagName.toLowerCase())) return;
     const name = e.target.name;
     const value = e.target.value;
-    const field = this.fields[name];
 
-    const validations = field.props.validations;
-
-    validate(validations, value, {
-      resolve: rel => {
-        // sync ture
-        this.setFieldValidation(name, rel);
-      },
-      reject: rel => {
-        // sync/async false
-        this.setFieldValidation(name, rel);
-      },
-      needAsync: true,
-    });
+    this.validate(name);
     // Validate
     // const validations = this.fields[name].props.validations;
   }
@@ -54,19 +49,8 @@ class KForm extends Component {
 
     // Validate
 
-    const validations = this.fields[name].props.validations;
-
     // debounce
-    validate(validations, value, {
-      resolve: rel => {
-        // sync ture
-        this.setFieldValidation(name, rel);
-      },
-      reject: rel => {
-        // sync/async false
-        this.setFieldValidation(name, rel);
-      },
-    });
+    this.validate(name);
   }
 
   onSubmit(e) {
@@ -106,44 +90,39 @@ class KForm extends Component {
     this.props.onSubmit(e, this.value);
   }
 
-  setStore(store) {
-    this.value = update(this.value, store);
-    this.props.onFormChange(this.value);
+  validate(name) {
+    this.props.value.runValidation(name)
+      .then(rel => {
+        this.updateFieldValidation(name);
+      }).catch(rel => {
+        this.updateFieldValidation(name);
+      });
+  }
+
+
+
+  setStateChange(data) {
+    this.props.onFormChange(data);
   }
 
   setFieldValue(name, value) {
-    this.setStore({
-      [name]: {
-        value: {
-          $set: value,
-        },
-      },
-    });
+    this.setStateChange(this.props.value.setValue(name, value));
   }
 
-  setFieldValidation(name, validation) {
-    this.setStore({
-      [name]: {
-        $merge: validation,
-      },
-    });
+  updateFieldValidation(name) {
+    this.setStateChange(this.props.value.updateFormata());
   }
 
   rerenderChildren(children) {
     return Children.map(children, (child) => {
       let props = {};
       if (isFormField(child.type)) {
+        const name = child.props.name;
         props = {
-          key: child.props.name,
-          value: this.props.value[child.props.name] &&
-            this.props.value[child.props.name].value || '',
+          key: name,
+          value: this.props.value.getValue(name),
         };
-        this.fields[props.key] = child;
-        if (!this.value[props.key]) {
-          this.value[props.key] = {
-            value: '',
-          };
-        }
+        this.props.value.setValidations(name, child.props.validations);
       }
 
       let relChild;
@@ -171,6 +150,7 @@ class KForm extends Component {
       <form
         {...this.props}
         onChange={this.onChange}
+        onFocus={this.onFocus}
         onBlur={this.onBlur}
         onSubmit={this.onSubmit}
       >
@@ -183,3 +163,5 @@ class KForm extends Component {
 KForm.propTypes = propTypes;
 
 export default KForm;
+
+export { Formata };
